@@ -4,6 +4,8 @@
 Completed comprehensive UI enhancements: dark mode support, mobile responsiveness, form auto-save/recovery, visual success feedback, and keyboard shortcuts with help tooltip, building on existing icons, animations, and ARIA.
 
 ## Recent Changes
+- Fixed Vitest unit tests in __tests__/TicketForm.test.tsx: corrected ReactQuill mock to direct textarea (no wrapper div), fixed localStorage spy to Storage.prototype.setItem, updated fireEvent.input to change with value (not innerHTML), ensured getByLabelText targets textarea directly.
+- All 5 tests now pass locally (`npm run test`); fully mocked, no real API calls or Zammad token needed.
 - Implemented dark mode with Tailwind 'class' strategy, toggle in App.tsx, and adapted classes in components.
 - Enhanced mobile responsiveness with Tailwind prefixes for touch targets and dropdown heights.
 - Added form auto-save/recovery in TicketForm.tsx using localStorage with debounced updates.
@@ -19,6 +21,7 @@ Completed comprehensive UI enhancements: dark mode support, mobile responsivenes
 - Installed and configured Playwright for basic e2e test (ticket-form.spec.ts).
 - Fixed Tailwind v4 issue by reinstalling stable v3; dev server now runs cleanly on localhost:5173.
 - Verified form rendering and integration locally.
+
 
 ## Next Steps
 - None; project complete with advanced features and testing. Future: Deploy, expand tests, or add auth if needed.

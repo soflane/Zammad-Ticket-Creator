@@ -6,8 +6,10 @@ import TicketForm from '../src/components/TicketForm';
 import * as zammad from '../src/api/zammad';
 import * as toast from 'react-hot-toast';
 
-const mockToastSuccess = vi.fn();
-const mockToastError = vi.fn();
+const { mockToastSuccess, mockToastError } = vi.hoisted(() => ({
+  mockToastSuccess: vi.fn(),
+  mockToastError: vi.fn(),
+}));
 
 // Mock modules
 vi.mock('../src/api/zammad');
@@ -19,11 +21,59 @@ vi.mock('react-hot-toast', () => ({
   },
 }));
 
+vi.mock('react-quill', () => ({
+  default: ({ id, value = '', onChange, placeholder, className, ...props }) => (
+    <textarea
+      id={id}
+      className={`ql-editor ${className || ''}`}
+      value={value}
+      onChange={(e) => onChange?.(e.target.value)}
+      placeholder={placeholder}
+      role="textbox"
+      aria-multiline="true"
+      {...props}
+    />
+  ),
+}));
+
+
+vi.mock('../src/components/EmailSelect', () => ({
+  default: ({ value, onSelect }) => (
+    <input
+      id="email"
+      placeholder="search or select email..."
+      value={value || ''}
+      onChange={(e) => onSelect(e.target.value)}
+    />
+  ),
+}));
+
+vi.mock('../src/components/PrioritySelect', () => ({
+  default: ({ value, onSelect }) => (
+    <select
+      id="priority"
+      value={value || 2}
+      onChange={(e) => onSelect(parseInt(e.target.value))}
+    >
+      <option value={1}>low</option>
+      <option value={2}>medium</option>
+      <option value={3}>high</option>
+    </select>
+  ),
+}));
+
 const mockCreateTicket = vi.mocked(zammad.createTicket);
 
 describe('TicketForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(zammad.getUsers).mockResolvedValue(['test@example.com']);
+    vi.mocked(zammad.getPriorities).mockResolvedValue([
+      { id: 1, name: 'low', default_create: false, active: true },
+      { id: 2, name: 'medium', default_create: true, active: true },
+      { id: 3, name: 'high', default_create: false, active: true }
+    ]);
+    vi.mocked(zammad.getMe).mockResolvedValue(123);
     mockCreateTicket.mockResolvedValue({ id: 123 });
   });
 
@@ -42,8 +92,12 @@ describe('TicketForm', () => {
 
     const titleInput = screen.getByLabelText(/ticket name/i);
     const emailInput = screen.getByPlaceholderText(/search or select email/i);
-    const quillEditor = screen.getByLabelText(/initial note/i).querySelector('.ql-editor') as HTMLElement;
+    const quillEditor = screen.getByLabelText(/initial note/i) as HTMLElement;
+
     const submitButton = screen.getByRole('button', { name: /create ticket/i });
+
+
+
 
     // Initially disabled
     expect(submitButton).toBeDisabled();
@@ -57,7 +111,8 @@ describe('TicketForm', () => {
     expect(submitButton).toBeDisabled();
 
     // Type in Quill
-    await user.type(quillEditor, 'Test note');
+    fireEvent.change(quillEditor, { target: { value: 'Test note' } });
+
     await waitFor(() => expect(submitButton).toBeEnabled());
   });
 
@@ -67,13 +122,15 @@ describe('TicketForm', () => {
 
     const titleInput = screen.getByLabelText(/ticket name/i);
     const emailInput = screen.getByPlaceholderText(/search or select email/i);
-    const quillEditor = screen.getByLabelText(/initial note/i).querySelector('.ql-editor') as HTMLElement;
+    const quillEditor = screen.getByLabelText(/initial note/i) as HTMLElement;
+
     const submitButton = screen.getByRole('button', { name: /create ticket/i });
 
     await user.type(titleInput, 'Test Title');
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    await user.type(quillEditor, 'Test note');
+    fireEvent.change(quillEditor, { target: { value: 'Test note' } });
     await waitFor(() => expect(submitButton).toBeEnabled());
+
 
     await user.click(submitButton);
 
@@ -94,13 +151,17 @@ describe('TicketForm', () => {
 
     const titleInput = screen.getByLabelText(/ticket name/i);
     const emailInput = screen.getByPlaceholderText(/search or select email/i);
-    const quillEditor = screen.getByLabelText(/initial note/i).querySelector('.ql-editor') as HTMLElement;
+    const quillEditor = screen.getByLabelText(/initial note/i) as HTMLElement;
+
+
+
     const submitButton = screen.getByRole('button', { name: /create ticket/i });
 
     await user.type(titleInput, 'Test Title');
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    await user.type(quillEditor, 'Test note');
+    fireEvent.change(quillEditor, { target: { value: 'Test note' } });
     await waitFor(() => expect(submitButton).toBeEnabled());
+
 
     await user.click(submitButton);
 
@@ -110,16 +171,18 @@ describe('TicketForm', () => {
   });
 
   test('draft auto-save', async () => {
-    vi.spyOn(localStorage, 'setItem');
+    vi.useFakeTimers();
+    vi.spyOn(Storage.prototype, 'setItem');
     const { unmount } = render(<TicketForm />);
     const titleInput = screen.getByLabelText(/ticket name/i);
     fireEvent.change(titleInput, { target: { value: 'Draft Title' } });
 
-    await waitFor(() => {
-      expect(localStorage.setItem).toHaveBeenCalledWith('ticketDraft', expect.any(String));
-    });
+    vi.advanceTimersByTime(1100);
+
+    expect(localStorage.setItem).toHaveBeenCalledWith('ticketDraft', expect.any(String));
 
     unmount();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 });

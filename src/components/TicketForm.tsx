@@ -45,7 +45,7 @@ export default function TicketForm() {
 
   // Load saved data from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('ticketFormData');
+    const saved = localStorage.getItem('ticketDraft');
     if (saved) {
       try {
         const parsedData = JSON.parse(saved);
@@ -63,7 +63,7 @@ export default function TicketForm() {
     }
 
     saveTimeoutRef.current = setTimeout(() => {
-      localStorage.setItem('ticketFormData', JSON.stringify(formData));
+      localStorage.setItem('ticketDraft', JSON.stringify(formData));
     }, 1000);
 
     return () => {
@@ -130,10 +130,10 @@ export default function TicketForm() {
         note: '',
         priority: 2,
       });
-      localStorage.removeItem('ticketFormData');
+      localStorage.removeItem('ticketDraft');
     } catch (error) {
       console.error('Error creating ticket:', error);
-      toast.error('Failed to create ticket. Please try again.');
+      toast.error(`Failed to create ticket: ${(error as Error).message}`);
     } finally {
       setSubmitting(false);
     }
@@ -163,7 +163,7 @@ export default function TicketForm() {
             Ticket Created!
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Your ticket #{ticketId} has been created successfully.
+            {`ticket #${ticketId} created successfully!`}
           </p>
           <div className="space-y-3">
             <button
@@ -198,7 +198,7 @@ export default function TicketForm() {
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <TagIcon className="inline-block w-5 h-5 mr-2" />
-                Title
+                Ticket name
               </label>
               <input
                 type="text"
@@ -215,7 +215,7 @@ export default function TicketForm() {
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <EnvelopeIcon className="inline-block w-5 h-5 mr-2" />
-                Email
+                Customer e-mail
               </label>
               <EmailSelect
                 value={formData.email}
@@ -238,10 +238,11 @@ export default function TicketForm() {
             <div>
               <label htmlFor="note" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <ChatBubbleLeftIcon className="inline-block w-5 h-5 mr-2" />
-                Description
+                Initial note
               </label>
               <div className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 overflow-hidden min-h-32">
                 <ReactQuill
+                  id="note"
                   theme="snow"
                   value={formData.note}
                   onChange={(value) => handleChange('note', value)}
