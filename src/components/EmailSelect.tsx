@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { UserIcon } from '@heroicons/react/24/outline';
 import { getUsers } from '../api/zammad';
+import { appConfig } from '../config';
 
-const INTERNAL_EMAIL = import.meta.env.VITE_INTERNAL_EMAIL || 'internal@example.com';
+const INTERNAL_EMAIL = appConfig.internalEmail;
 
 interface EmailSelectProps {
   onSelect: (email: string) => void;

@@ -6,12 +6,14 @@ services:
     ports:
       - "80:80"
     environment:
-      - VITE_ZAMMAD_TOKEN=${VITE_ZAMMAD_TOKEN:-your_api_token_here}
-      - VITE_DEFAULT_GROUP=${VITE_DEFAULT_GROUP:-Support}
-      - VITE_DEFAULT_STATE_ID=${VITE_DEFAULT_STATE_ID:-2}
-      - VITE_DEFAULT_TAGS=${VITE_DEFAULT_TAGS:-internal,silent}
-      - VITE_INTERNAL_EMAIL=${VITE_INTERNAL_EMAIL:-internal@example.com}
-      - VITE_ZAMMAD_BASE_URL=${VITE_ZAMMAD_BASE_URL:-https://your-zammad-instance.com}
+      # Server-side variables (no VITE_ prefix — never touch the JS bundle)
+      # Mapped from VITE_* in .env so developers use a single .env file for both dev and Docker.
+      - ZAMMAD_TOKEN=${ZTC_ZAMMAD_TOKEN:?Zammad API token must be set}
+      - ZAMMAD_BASE_URL=${ZTC_ZAMMAD_BASE_URL:-https://your-zammad-instance.com}
+      - DEFAULT_GROUP=${ZTC_DEFAULT_GROUP:-Support}
+      - DEFAULT_STATE_ID=${ZTC_DEFAULT_STATE_ID:-2}
+      - DEFAULT_TAGS=${ZTC_DEFAULT_TAGS:-internal,silent}
+      - INTERNAL_EMAIL=${ZTC_INTERNAL_EMAIL:-internal@example.com}
     env_file:
       - .env
     restart: unless-stopped

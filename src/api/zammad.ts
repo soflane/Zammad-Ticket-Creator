@@ -1,15 +1,25 @@
 /* Types defined inline below */
 
-const TOKEN = import.meta.env.VITE_ZAMMAD_TOKEN || '';
-const GROUP = import.meta.env.VITE_DEFAULT_GROUP || '';
-const STATE_ID = parseInt(import.meta.env.VITE_DEFAULT_STATE_ID || '2');
-const TAGS = import.meta.env.VITE_DEFAULT_TAGS || '';
-// Token validation moved to lazy evaluation in functions for test/CI compatibility
+import { appConfig } from '../config';
 
-const headers = {
-  'Authorization': `Token token=${TOKEN}`,
-  'Content-Type': 'application/json',
-};
+const GROUP = appConfig.defaultGroup;
+const STATE_ID = appConfig.defaultStateId;
+const TAGS = appConfig.defaultTags;
+
+/**
+ * In production, Nginx injects `Authorization: Token token=...` server-side.
+ * The token is never baked into the JS bundle.
+ * In dev (npm run dev), the Vite proxy forwards the header to Zammad.
+ * The `import.meta.env.DEV` branch is dead code in production builds
+ * and is fully eliminated by Vite's tree-shaking.
+ */
+function getHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (import.meta.env.DEV) {
+    headers['Authorization'] = `Token token=${import.meta.env.VITE_ZAMMAD_TOKEN || ''}`;
+  }
+  return headers;
+}
 
 interface User {
   email: string;
@@ -51,7 +61,7 @@ interface TicketPayload {
 }
 
 export async function getPriorities(): Promise<TicketPriority[]> {
-  const response = await fetch('/zammad-api/api/v1/ticket_priorities', { headers });
+  const response = await fetch('/zammad-api/api/v1/ticket_priorities', { headers: getHeaders() });
   const responseText = await response.text();
   if (!response.ok) {
     console.error('API Error Response (getPriorities):', responseText);
@@ -67,7 +77,7 @@ export async function getPriorities(): Promise<TicketPriority[]> {
 }
 
 export async function getUsers(): Promise<string[]> {
-  const response = await fetch('/zammad-api/api/v1/users', { headers });
+  const response = await fetch('/zammad-api/api/v1/users', { headers: getHeaders() });
   const responseText = await response.text();
   if (!response.ok) {
     console.error('API Error Response (getUsers):', responseText);
@@ -87,7 +97,7 @@ export async function getUsers(): Promise<string[]> {
 }
 
 export async function getMe(): Promise<number> {
-  const response = await fetch('/zammad-api/api/v1/users/me', { headers });
+  const response = await fetch('/zammad-api/api/v1/users/me', { headers: getHeaders() });
   const responseText = await response.text();
   if (!response.ok) {
     console.error('API Error Response (getMe):', responseText);
@@ -124,7 +134,7 @@ export async function createTicket(title: string, customerEmail: string, note: s
 
   const response = await fetch('/zammad-api/api/v1/tickets', {
     method: 'POST',
-    headers,
+    headers: getHeaders(),
     body: JSON.stringify(payload),
   });
 
